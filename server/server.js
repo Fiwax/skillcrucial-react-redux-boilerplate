@@ -86,22 +86,45 @@ server.post('/api/v1/users', async (req, res) => {
 
 server.patch('/api/v1/users/:userId', async (req, res) => {
   const { userId } = req.params
-  const newUser = req.body
+  const newUser = req.body   // there is mistake
   const users = await fileRead()
   const arr = users.find((it) => it.id === +userId)
   const newData = {...arr, ...newUser}
-  writeFile(`${__dirname}/users.json`, JSON.stringify(newData), { encoding: 'utf8'})
+  const newUser2 = users.map((it) => it.id === newData.id ? newData : it)  // the meaning of this code
+  writeFile(`${__dirname}/users.json`, JSON.stringify(newUser2), { encoding: 'utf8'})
   res.json({ status: 'success', id: userId})
 })
 
+// server.patch('/api/v1/users/:userId', async (req, res) => {
+//   const { userId } = req.params
+//   const newUser = req.body
+//   const arr = await fileExist() 
+//   const objId = arr.find((obj) => obj.id === +userId)
+//   const objId2 = { ...objId, ...newUser }
+//   const arr2 = arr.map((rec) => rec.id === objId2.id ? objId2 : rec)
+//   toWriteFile(arr2)
+//   res.json({ status: 'success', id: userId })
+// })
+
 // delete /api/v1/users/:userId - удаляет юзера в users.json, с id равным userId, и возвращает { status: 'success', id: userId }
 
+// server.delete('/api/v1/users/:userId', async (req, res) => {
+//  const { userId } = req.params
+//  const users = await fileRead()
+//  const arr = users.filter((it) => it.id !== +userId)
+//  writeFile(`${__dirname}/users.json`, JSON.stringify(arr), { encoding: 'utf8'})
+//  res.json({ status: 'success', id: userId})
+// })
+
+
+
 server.delete('/api/v1/users/:userId', async (req, res) => {
- const { userId } = req.params
- const users = await fileRead()
- const arr = users.filter((it) => it.id !== +userId)
- writeFile(`${__dirname}/users.json`, JSON.stringify(arr), { encoding: 'utf8'})
- res.json({ status: 'success', id: userId})
+  const { userId } = req.params
+  const arr = await readFile() 
+  const objId = arr.find((obj) => obj.id === +userId)
+  const arr2 = arr.filter((rec) => rec.id !== objId.id)
+  writeFile(`${__dirname}/users.json`, JSON.stringify(arr2), { encoding: 'utf8'})
+  res.json({ status: 'success', id: userId })
 })
 
 // delete /api/v1/users - удаляет файл users.json
