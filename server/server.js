@@ -52,14 +52,29 @@ const middleware = [
 
 middleware.forEach((it) => server.use(it))
 
+// function fileExist() {
+//   const bigData = readFile(`${__dirname}/users.json`, { encoding: 'utf8' })
+//    .then((text) => JSON.parse(text))
+//    .catch(async () => {
+//      const {data: users} = await axios(`https://jsonplaceholder.typicode.com/users`)
+//      writeFile(`${__dirname}/users.json`, JSON.stringify(users), { encoding: 'utf8' })
+//    })
+//    return bigData
+// }
+
 function fileExist() {
-  const bigData = readFile(`${__dirname}/users.json`, { encoding: 'utf8' })
-   .then((text) => JSON.parse(text))
-   .catch(async () => {
-     const {data: users} = await axios(`https://jsonplaceholder.typicode.com/users`)
-     writeFile(`${__dirname}/users.json`, JSON.stringify(users), { encoding: 'utf8' })
-   })
-   return bigData
+  const bigData = readFile(`${__dirname}/users.json`)
+  .then((file) => {
+    return JSON.parse(file)
+  })
+  .catch(async () => {
+    const response = await axios('https://jsonplaceholder.typicode.com/users')
+      .then(res => res.data)
+    response.sort((a, b) => a.id - b.id)
+    writeFile(`${__dirname}/users.json`, JSON.stringify(response), { encoding: 'utf8' })
+    return response
+  }) 
+  return bigData
 }
 
 server.get('/api/v1/users', async (req, res) => {  // it works
