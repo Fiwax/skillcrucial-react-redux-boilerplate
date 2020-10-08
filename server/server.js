@@ -11,7 +11,7 @@ import cookieParser from 'cookie-parser'
 import config from './config'
 import Html from '../client/html'
 
-const { readFile, writeFile, unlink } = require("fs").promises
+const { readFile, writeFile, unlink } = require('fs').promises
 
 
 const Root = () => ''
@@ -36,8 +36,8 @@ const port = process.env.PORT || 8090
 const server = express()
 
 const headers = (req, res, next) => {
-  res.set('x-skillcrucial-user', '7e6c249a-9f98-4872-a8aa-a158a2515083');  
-  res.set('Access-Control-Expose-Headers', 'X-SKILLCRUCIAL-USER')  
+  res.set('x-skillcrucial-user', '7e6c249a-9f98-4872-a8aa-a158a2515083');
+  res.set('Access-Control-Expose-Headers', 'X-SKILLCRUCIAL-USER')
   next()
 }
 
@@ -52,20 +52,18 @@ const middleware = [
 
 middleware.forEach((it) => server.use(it))
 
-const fileRead = () => {
-  const data = readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
-  .then((text) => JSON.parse(text))
-  .catch(async () => {
-   const {data: users} = await axios('https://jsonplaceholder.typicode.com/users')
-   writeFile(`${__dirname}/users.json`, JSON.stringify(users) , { encoding: 'utf8'})
-   readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
-    .then((text) => JSON.parse(text))
-  })
-  return data
+function fileExist() {
+  const bigData = readFile(`${__dirname}/users.json`, { encoding: 'utf8' })
+   .then((text) => JSON.parse(text))
+   .catch(async () => {
+     const {data: users} = await axios(`https://jsonplaceholder.typicode.com/users`)
+     writeFile(`${__dirname}/users.json`, JSON.stringify(users), { encoding: 'utf8' })
+   })
+   return bigData
 }
 
-server.get('/api/v1/users', async (req, res) => {
-  const users = await fileRead()
+server.get('/api/v1/users', async (req, res) => {  // it works
+  const users = await fileExist()
   res.json(users)
 })
 
@@ -73,64 +71,43 @@ server.get('/api/v1/users', async (req, res) => {
 // post /api/v1/users - добавляет юзера в файл users.json, с id равным id последнего элемента + 1 
 // и возвращает { status: 'success', id: id }
 
-server.post('/api/v1/users', async (req, res) => {
-  const users = await fileRead()
+server.post('/api/v1/users', async (req, res) => { 
   const newUser = req.body
-  newUser.id = users[users.length - 1].id +1
-  writeFile(`${__dirname}/users.json`, JSON.stringify([...users, newUser]), { encoding: 'utf8'})
+  const users = await fileExist()
+  newUser.id = users[users.length - 1].id + 1
+  writeFile(`${__dirname}/users.json`, JSON.stringify([...users, newUser]), {encoding: 'utf8'})
   res.json({ status: 'success', id: newUser.id})
 })
 
 // patch /api/v1/users/:userId - получает новый объект, дополняет его полями юзера в users.json, с id равным userId,
 //  и возвращает { status: 'success', id: userId }
-
-server.patch('/api/v1/users/:userId', async (req, res) => {
+server.patch('api/v1/users/:userId', async (req, res) => { // it soens
   const { userId } = req.params
-  const newUser = req.body   // there is mistake
-  const users = await fileRead()
-  const arr = users.find((it) => it.id === +userId)
-  const newData = {...arr, ...newUser}
-  const newUser2 = users.map((it) => it.id === newData.id ? newData : it)  // the meaning of this code
-  writeFile(`${__dirname}/users.json`, JSON.stringify(newUser2), { encoding: 'utf8'})
+  const newUser = req.body
+  const arr = await fileExist() 
+  const objId = arr.find((obj) => obj.id === +userId)
+  const objId2 = { ...objId, ...newUser }
+  const arr2 = arr.map((rec) => rec.id === objId2.id ? objId2 : rec)
+ writeFile(`${__dirname}/users.json`, JSON.stringify(arr2), { encoding: 'utf8'})
   res.json({ status: 'success', id: userId})
 })
 
-// server.patch('/api/v1/users/:userId', async (req, res) => {
-//   const { userId } = req.params
-//   const newUser = req.body
-//   const arr = await fileExist() 
-//   const objId = arr.find((obj) => obj.id === +userId)
-//   const objId2 = { ...objId, ...newUser }
-//   const arr2 = arr.map((rec) => rec.id === objId2.id ? objId2 : rec)
-//   toWriteFile(arr2)
-//   res.json({ status: 'success', id: userId })
-// })
-
 // delete /api/v1/users/:userId - удаляет юзера в users.json, с id равным userId, и возвращает { status: 'success', id: userId }
 
-// server.delete('/api/v1/users/:userId', async (req, res) => {
-//  const { userId } = req.params
-//  const users = await fileRead()
-//  const arr = users.filter((it) => it.id !== +userId)
-//  writeFile(`${__dirname}/users.json`, JSON.stringify(arr), { encoding: 'utf8'})
-//  res.json({ status: 'success', id: userId})
-// })
-
-
-
-server.delete('/api/v1/users/:userId', async (req, res) => {
+server.delete('api/v1/users/:userId', async (req, res) => { // it doesnt
+  const arr = await fileExist()
   const { userId } = req.params
-  const arr = await readFile() 
-  const objId = arr.find((obj) => obj.id === +userId)
-  const arr2 = arr.filter((rec) => rec.id !== objId.id)
-  writeFile(`${__dirname}/users.json`, JSON.stringify(arr2), { encoding: 'utf8'})
-  res.json({ status: 'success', id: userId })
+  const obj = arr.find((item) => item.id === +userId)
+  const newArr = obj.filter((user) => user.id !== obj.id)
+  writeFile(`${__dirname}/users.json`, JSON.stringify(newArr), { encoding: 'utf8'})
+  res.json({ status: 'success', id: userId})
 })
 
-// delete /api/v1/users - удаляет файл users.json
 
-server.delete('/api/v1/users', async (req, res) => {
-  unlink(`${__dirname}/test.json`)
+// delete /api/v1/users - удаляет файл users.json 
+
+server.delete('/api/v1/users', async (req, res) => {  // it works
+  unlink(`${__dirname}/users.json`)
   res.json({ status: 'success' })
 })
 
@@ -174,7 +151,7 @@ if (config.isSocketsEnabled) {
   const echo = sockjs.createServer()
   echo.on('connection', (conn) => {
     connections.push(conn)
-    conn.on('data', async () => {})
+    conn.on('data', async () => { })
 
     conn.on('close', () => {
       connections = connections.filter((c) => c.readyState !== 3)
