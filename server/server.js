@@ -53,7 +53,7 @@ const middleware = [
 middleware.forEach((it) => server.use(it))
 
 // function fileExist() {
-//   const bigData = readFile(`${__dirname}/users.json`, { encoding: 'utf8' })
+//   const bigData = readFile(`${__dirname}/users.json`, { encoding: 'utf8' })  // there is a mistake
 //    .then((text) => JSON.parse(text))
 //    .catch(async () => {
 //      const {data: users} = await axios(`https://jsonplaceholder.typicode.com/users`)
@@ -109,15 +109,23 @@ server.patch('api/v1/users/:userId', async (req, res) => { // it soens
 
 // delete /api/v1/users/:userId - удаляет юзера в users.json, с id равным userId, и возвращает { status: 'success', id: userId }
 
-server.delete('api/v1/users/:userId', async (req, res) => { // it doesnt
-  const arr = await fileExist()
-  const { userId } = req.params
-  const obj = arr.find((item) => item.id === +userId)
-  const newArr = obj.filter((user) => user.id !== obj.id)
-  writeFile(`${__dirname}/users.json`, JSON.stringify(newArr), { encoding: 'utf8'})
-  res.json({ status: 'success', id: userId})
-})
+// server.delete('api/v1/users/:userId', async (req, res) => { // it doesnt
+//   const arr = await fileExist()
+//   const { userId } = req.params
+//   const obj = arr.find((item) => item.id === +userId)
+//   const newArr = obj.filter((user) => user.id !== obj.id)
+//   writeFile(`${__dirname}/users.json`, JSON.stringify(newArr), { encoding: 'utf8'})
+//   res.json({ status: 'success', id: userId})
+// })
 
+server.delete('/api/v1/users/:userId', async (req, res) => {
+  const { userId } = req.params
+  const arr = await fileExist() 
+  const objId = arr.find((obj) => obj.id === +userId)
+  const arr2 = arr.filter((rec) => rec.id !== objId.id)
+  writeFile(`${__dirname}/users.json`, JSON.stringify(arr2), { encoding: 'utf8'})
+  res.json({ status: 'success', id: userId })
+})
 
 // delete /api/v1/users - удаляет файл users.json 
 
