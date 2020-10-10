@@ -11,6 +11,7 @@ import cookieParser from 'cookie-parser'
 import config from './config'
 import Html from '../client/html'
 
+
 const { readFile, writeFile, unlink } = require('fs').promises
 
 
@@ -62,24 +63,34 @@ middleware.forEach((it) => server.use(it))
 //    return bigData
 // }
 
-function fileExist() {
-  const bigData = readFile(`${__dirname}/users.json`)
-  .then((file) => {
-    return JSON.parse(file)
-  })
-  .catch(async () => {
-    const response = await axios('https://jsonplaceholder.typicode.com/users')
-      .then(res => res.data)
-    response.sort((a, b) => a.id - b.id)
-    writeFile(`${__dirname}/users.json`, JSON.stringify(response), { encoding: 'utf8' })
-    return response
-  }) 
-  return bigData
-}
+// function fileExist() {
+//   const bigData = readFile(`${__dirname}/users.json`)
+//   .then((file) => {
+//     return JSON.parse(file)
+//   })
+//   .catch(async () => {
+//     const response = await axios('https://jsonplaceholder.typicode.com/users')
+//       .then(res => res.data)
+//     response.sort((a, b) => a.id - b.id)
+//     writeFile(`${__dirname}/users.json`, JSON.stringify(response), { encoding: 'utf8' })
+//     return response
+//   }) 
+//   return bigData
+// }
 
 server.get('/api/v1/users', async (req, res) => {  // it works
-  const users = await fileExist()
-  res.json(users)
+  readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
+   .then((file) => {
+     return res.json(JSON.parse(file))
+   })
+   .catch(async () => {
+    const {data: users} = await axios('https://jsonplaceholder.typicode.com/users')
+    writeFile(`${__dirname}/users.json`, JSON.stringify(users), { encoding: 'utf8'})
+    readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
+     .then((file) => {
+       return res.json(JSON.parse(file))
+     })
+   })
 })
 
 
@@ -87,35 +98,43 @@ server.get('/api/v1/users', async (req, res) => {  // it works
 // и возвращает { status: 'success', id: id }
 
 server.post('/api/v1/users', async (req, res) => { 
-  const newUser = req.body
-  const users = await fileExist()
-  newUser.id = users[users.length - 1].id + 1
-  writeFile(`${__dirname}/users.json`, JSON.stringify([...users, newUser]), {encoding: 'utf8'})
-  res.json({ status: 'success', id: newUser.id})
+  readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
+  .then((file) => {
+    const arr = JSON.parse(file)
+    const newUser = req.body
+    newUser.id = arr[arr.length - 1].id + 1
+    writeFile(`${__dirname}/users.json`, JSON.stringify([...arr, newUser]), { encoding: 'utf8'})
+    res.json({ status: 'success', id: newUser.id})
+  })
 })
 
 // patch /api/v1/users/:userId - получает новый объект, дополняет его полями юзера в users.json, с id равным userId,
 //  и возвращает { status: 'success', id: userId }
-server.patch('api/v1/users/:userId', async (req, res) => { // it soens
-  const { userId } = req.params
-  const newUser = req.body
-  const arr = await fileExist() 
-  const objId = arr.find((obj) => obj.id === +userId)
-  const objId2 = { ...objId, ...newUser }
-  const arr2 = arr.map((rec) => rec.id === objId2.id ? objId2 : rec)
- writeFile(`${__dirname}/users.json`, JSON.stringify(arr2), { encoding: 'utf8'})
-  res.json({ status: 'success', id: userId})
+
+server.patch('/api/v1/users/:userId', async (req, res) => {
+  readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
+   .then((file) => {
+     const users = JSON.parse(file)
+     const { userId } = req.params
+     const data = req.body
+     const users2 = users.find((user) => user.id === +userId)
+     const users3 = {...users2, ...data}
+     writeFile(`${__dirname}/users.json`, JSON.stringify(users3), { encoding: 'utf8'})
+     res.json({ status: 'success', id: userId})
+   })
 })
 
 // delete /api/v1/users/:userId - удаляет юзера в users.json, с id равным userId, и возвращает { status: 'success', id: userId }
 
 server.delete('/api/v1/users/:userId', async (req, res) => {
-  const { userId } = req.params
-  const arr = await fileExist() 
-  const objId = arr.find((obj) => obj.id === +userId)
-  const arr2 = arr.filter((rec) => rec.id !== objId.id)
-  writeFile(`${__dirname}/users.json`, JSON.stringify(arr2), { encoding: 'utf8'})
-  res.json({ status: 'success', id: userId })
+  readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
+   .then((file) => {
+     const users = JSON.parse(file)
+     const { userId } = req.params
+     const users2 =  users.filter((rec) => rec.id !== +userId)
+     writeFile(`${__dirname}/users.json`, JSON.stringify(users2), { encoding: 'utf8'})
+     res.json({ status: 'success', id: userId})
+   })
 })
 
 // delete /api/v1/users - удаляет файл users.json 
