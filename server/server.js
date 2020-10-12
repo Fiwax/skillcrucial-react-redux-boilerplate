@@ -53,31 +53,6 @@ const middleware = [
 
 middleware.forEach((it) => server.use(it))
 
-// function fileExist() {
-//   const bigData = readFile(`${__dirname}/users.json`, { encoding: 'utf8' })  // there is a mistake
-//    .then((text) => JSON.parse(text))
-//    .catch(async () => {
-//      const {data: users} = await axios(`https://jsonplaceholder.typicode.com/users`)
-//      writeFile(`${__dirname}/users.json`, JSON.stringify(users), { encoding: 'utf8' })
-//    })
-//    return bigData
-// }
-
-// function fileExist() {
-//   const bigData = readFile(`${__dirname}/users.json`)
-//   .then((file) => {
-//     return JSON.parse(file)
-//   })
-//   .catch(async () => {
-//     const response = await axios('https://jsonplaceholder.typicode.com/users')
-//       .then(res => res.data)
-//     response.sort((a, b) => a.id - b.id)
-//     writeFile(`${__dirname}/users.json`, JSON.stringify(response), { encoding: 'utf8' })
-//     return response
-//   }) 
-//   return bigData
-// }
-
 server.get('/api/v1/users', async (req, res) => {  // it works
   readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
    .then((file) => {
@@ -119,7 +94,8 @@ server.patch('/api/v1/users/:userId', async (req, res) => {
      const data = req.body
      const users2 = users.find((user) => user.id === +userId)
      const users3 = {...users2, ...data}
-     writeFile(`${__dirname}/users.json`, JSON.stringify(users3), { encoding: 'utf8'})
+     const users4 = users.map((rec) => rec.id === users3.id ? users3 : rec)
+     writeFile(`${__dirname}/users.json`, JSON.stringify(users4), { encoding: 'utf8'})
      res.json({ status: 'success', id: userId})
    })
 })
