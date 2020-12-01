@@ -53,43 +53,41 @@ const middleware = [
 
 middleware.forEach((it) => server.use(it))
 
-server.get('/api/v1/users', async (req, res) => {  // it works
+// get /api/v1/users - получает всех юзеров из файла users.json, если его нет - получает данные с сервиса https://jsonplaceholder.typicode.com/users,
+// заполняет файл users.json полученными данными и возвращает эти данные пользователю
+
+server.get('/api/v1/users', async (req, res) => {
   readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
-   .then((file) => {
-     return res.json(JSON.parse(file))
-   })
+   .then((data) => res.json(JSON.parse(data)))
    .catch(async () => {
-    const {data: users} = await axios('https://jsonplaceholder.typicode.com/users')
-    writeFile(`${__dirname}/users.json`, JSON.stringify(users), { encoding: 'utf8'})
-    readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
-     .then((file) => {
-       return res.json(JSON.parse(file))
-     })
+     const { data: users } = await axios(`https://jsonplaceholder.typicode.com/users`)
+     writeFile(`${__dirname}/users.json`, JSON.stringify(users), { encoding: 'utf8'})
+     return users
    })
 })
 
 
-// post /api/v1/users - добавляет юзера в файл users.json, с id равным id последнего элемента + 1 
+// post /api/v1/users - добавляет юзера в файл users.json, с id равным id последнего элемента + 1
 // и возвращает { status: 'success', id: id }
 
-server.post('/api/v1/users', async (req, res) => { 
+server.post('/api/v1/users', (req, res) => {
   readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
-  .then((file) => {
-    const arr = JSON.parse(file)
-    const newUser = req.body
-    newUser.id = arr[arr.length - 1].id + 1
-    writeFile(`${__dirname}/users.json`, JSON.stringify([...arr, newUser]), { encoding: 'utf8'})
-    res.json({ status: 'success', id: newUser.id})
+  .then((user) => {
+     const users = JSON.parse(user)
+     const newUser = req.body
+     newUser.id = users[users.length - 1].id + 1
+     writeFile(`${__dirname}/users.json`, JSON.stringify([...users, newUser]), { encoding: 'utf8'})
+    res.json({ status: 'success', id: newUser.id })
   })
 })
 
 // patch /api/v1/users/:userId - получает новый объект, дополняет его полями юзера в users.json, с id равным userId,
 //  и возвращает { status: 'success', id: userId }
 
-server.patch('/api/v1/users/:userId', async (req, res) => {
+server.patch('/api/v1/users/:userId', (req, res) => {
   readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
-   .then((file) => {
-     const users = JSON.parse(file)
+   .then((user) => {
+     const users = JSON.parse(user)
      const { userId } = req.params
      const data = req.body
      const users2 = users.find((user) => user.id === +userId)
@@ -102,22 +100,22 @@ server.patch('/api/v1/users/:userId', async (req, res) => {
 
 // delete /api/v1/users/:userId - удаляет юзера в users.json, с id равным userId, и возвращает { status: 'success', id: userId }
 
-server.delete('/api/v1/users/:userId', async (req, res) => {
+server.delete('/api/v1/users/:userId', (req, res) => {
   readFile(`${__dirname}/users.json`, { encoding: 'utf8'})
-   .then((file) => {
-     const users = JSON.parse(file)
-     const { userId } = req.params
-     const users2 =  users.filter((rec) => rec.id !== +userId)
-     writeFile(`${__dirname}/users.json`, JSON.stringify(users2), { encoding: 'utf8'})
-     res.json({ status: 'success', id: userId})
+   .then((user) => {
+    const users = JSON.parse(user)
+    const { userId } = req.params
+    const updateUser =  users.filter((user) => user.id !== +userId)
+    writeFile(`${__dirname}/users.json`, JSON.stringify(updateUser), { encoding: 'utf8'})
+    res.json({ status: 'success', id: userId })
    })
 })
 
-// delete /api/v1/users - удаляет файл users.json 
+// delete /api/v1/users - удаляет файл users.json
 
-server.delete('/api/v1/users', async (req, res) => {  // it works
-  unlink(`${__dirname}/users.json`)
-  res.json({ status: 'success' })
+server.delete('api/v1/users', (req, res) => {
+ unlink(`${__dirname}/users.json`)
+ res.json({ status: 'success'})
 })
 
 
